@@ -1,3 +1,92 @@
+
+-- Base de données Sonelgaz Digitalisation
+CREATE DATABASE IF NOT EXISTS sonelgaz_db;
+USE sonelgaz_db;
+
+-- TABLES
+CREATE TABLE releve_elec (
+    id_releve INT AUTO_INCREMENT PRIMARY KEY,
+    id_client INT,
+    date_releve DATE,
+    ancien_index INT,
+    nouvel_index INT,
+    consommation INT
+);
+
+CREATE TABLE releve_gaz (
+    id_releve INT AUTO_INCREMENT PRIMARY KEY,
+    id_client INT,
+    date_releve DATE,
+    ancien_index INT,
+    nouvel_index INT,
+    consommation INT
+);
+
+CREATE TABLE intervention_elec (
+    ID_intervention INT AUTO_INCREMENT PRIMARY KEY,
+    id_client INT,
+    date_intervention DATE,
+    description TEXT
+);
+
+-- LOG
+CREATE TABLE log_interventions (
+    id_log INT AUTO_INCREMENT PRIMARY KEY,
+    id_intervention INT,
+    date_action DATETIME,
+    user_action VARCHAR(50),
+    action_type VARCHAR(50)
+);
+
+-- UTILISATEURS ET PRIVILÈGES
+-- Note : Ces commandes doivent être exécutées avec les droits SUPER dans MySQL
+-- CREATE USER 'admin_sonelgaz'@'localhost' IDENTIFIED BY 'admin2025!';
+-- CREATE USER 'agent_releve'@'localhost' IDENTIFIED BY 'releve123';
+-- GRANT ALL PRIVILEGES ON *.* TO 'admin_sonelgaz'@'localhost' WITH GRANT OPTION;
+-- GRANT SELECT, INSERT, UPDATE ON sonelgaz_db.releve_elec TO 'agent_releve'@'localhost';
+-- GRANT SELECT, INSERT, UPDATE ON sonelgaz_db.releve_gaz TO 'agent_releve'@'localhost';
+-- FLUSH PRIVILEGES;
+
+-- TRIGGERS
+
+-- Calcul consommation électrique
+DELIMITER $$
+CREATE TRIGGER calcul_consommation_elec
+BEFORE INSERT ON releve_elec
+FOR EACH ROW
+BEGIN
+    SET NEW.consommation = NEW.nouvel_index - NEW.ancien_index;
+END$$
+DELIMITER ;
+
+-- Vérification des index électrique
+DELIMITER $$
+CREATE TRIGGER verif_index_elec
+BEFORE INSERT ON releve_elec
+FOR EACH ROW
+BEGIN
+    IF NEW.nouvel_index < NEW.ancien_index THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erreur : Nouvel index < Ancien index !';
+    END IF;
+END$$
+DELIMITER ;
+
+-- Log automatique après insertion d'une intervention électrique
+DELIMITER $$
+CREATE TRIGGER log_new_intervention_elec
+AFTER INSERT ON intervention_elec
+FOR EACH ROW
+BEGIN
+    INSERT INTO log_interventions (id_intervention, date_action, user_action, action_type)
+    VALUES (NEW.ID_intervention, NOW(), CURRENT_USER(), 'INSERT');
+END$$
+DELIMITER ;
+
+![MCD[Uploading sonelgaz_mcd.sql…]()
+](https://github.com/user-attachments/assets/75103d5b-5e63-4229-9c24-42b0ec453b5b)
+
+
 # Database-DBA-Project
 Projet de gestion de base de données incluant la modélisation (MCD/MLD), la création de tables SQL, des requêtes complexes, la gestion des droits utilisateurs, l’optimisation des performances et des scripts de sauvegarde/restauration. Réalisé avec MySQL/PostgreSQL.
 
@@ -5,7 +94,8 @@ Projet de gestion de base de données incluant la modélisation (MCD/MLD), la cr
 🗄️ Projet Base de Données / DBA
 Ce projet met en œuvre les compétences fondamentales en conception, gestion et optimisation de bases de données relationnelles, dans un cadre professionnel simulé. Il s’adresse aux étudiants, développeurs ou administrateurs de bases de données souhaitant comprendre ou démontrer le cycle complet de vie d’une base de données.
 
-🎯 Objectifs du projet
+🎯 Objectifs du projet![Uploading MCD.jpeg…]()
+
 Concevoir un schéma relationnel optimal (modèle conceptuel, logique, physique).
 
 Implémenter la base de données à l’aide de SQL (MySQL / PostgreSQL / Oracle).
